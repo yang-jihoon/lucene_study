@@ -25,8 +25,8 @@ public class IndexFiles {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String docsPath = "E:\\workspace";
-		String indexPath = "E:\\lucene_index";
+		String docsPath = "d:\\workspace";
+		String indexPath = "d:\\lucene_index";
 		
 	    Date start = new Date();
 		
