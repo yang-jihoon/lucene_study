@@ -4,7 +4,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -17,9 +19,15 @@ import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.tistory.devyongsik.analyzer.KoreanAnalyzer;
 
 
 public class IndexFiles {
+	
+	final static Logger logger = LoggerFactory.getLogger(IndexFiles.class);
 
 	/**
 	 * @param args
@@ -32,7 +40,7 @@ public class IndexFiles {
 		
 		try {
 			Directory dir = FSDirectory.open(new File(indexPath));
-			Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_31);
+			Analyzer analyzer = new KoreanAnalyzer(true);
 			IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_31, analyzer);
 			
 			iwc.setOpenMode(OpenMode.CREATE);
@@ -44,10 +52,10 @@ public class IndexFiles {
 		    writer.close();
 		    
             Date end = new Date();
-		    System.out.println(end.getTime() - start.getTime() + " total milliseconds");
+            logger.info(end.getTime() - start.getTime() + " total milliseconds");
 
 		} catch (Exception e) {
-			System.out.println(e);  
+        	logger.error(e.toString());  
 		}
 	}
 
@@ -67,7 +75,7 @@ public class IndexFiles {
 	        try {
 	          fis = new FileInputStream(file);
 	        } catch (FileNotFoundException fnfe) {
-			  System.out.println(fnfe);  
+	        	logger.error(fnfe.toString());  
 	          return;
 	        }
 	
@@ -77,16 +85,17 @@ public class IndexFiles {
 	          Field fullPathField = new Field("full_path", file.getPath(), Field.Store.YES, Field.Index.ANALYZED);
 	          doc.add(fullPathField);
 	          
-	          Field fileNameField = new Field("file_name", file.getName(), Field.Store.YES, Field.Index.ANALYZED);
+	          Field fileNameField = new Field("file_name", file.getName().toLowerCase(), Field.Store.YES, Field.Index.ANALYZED);
 	          doc.add(fileNameField);
 	
-	          NumericField modifiedField = new NumericField("modified");
-	          modifiedField.setLongValue(file.lastModified());
+	          NumericField modifiedField = new NumericField("modified",Field.Store.YES, true);
+	          SimpleDateFormat formatter = new SimpleDateFormat ( "yyyyMMddHHmmss", Locale.KOREA );
+	          modifiedField.setLongValue(Long.parseLong(formatter.format(new Date(file.lastModified()))));
 	          doc.add(modifiedField);
 	
 	          doc.add(new Field("contents", new BufferedReader(new InputStreamReader(fis, "UTF-8"))));
 
-	          System.out.println("adding " + file);
+	          logger.info("adding " + file);
 	          
 	          writer.addDocument(doc);
 	        } finally {
